@@ -11,7 +11,7 @@ const dateFormat = "2006-01"
 const bz2Format = "RC_%04d-%02d.bz2"
 const xzFormat = "RC_%04d-%02d.xz"
 const ngramFormat = "RC_%04d-%02d_%dg.lz4"
-const ngramCountFormat = "RC_%04d-%02d_%dgc.lz4"
+const ngramCountFormat = "RC_%04d-%02d_%dgc.gz"
 
 var RedditDataPath = getRedditDataPath()
 var RedditCommentsPath = path.Join(RedditDataPath, "comments")
