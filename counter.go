@@ -23,11 +23,11 @@ func (sc *StringCounter) Add(k string) {
 }
 
 func (sc *StringCounter) Update(ks []string) {
-	sc.Lock()
 	for _, k := range ks {
+		sc.Lock()
 		sc.m[k]++
+		sc.Unlock()
 	}
-	sc.Unlock()
 }
 
 func (sc *StringCounter) Get(k string) uint64 {
@@ -78,15 +78,13 @@ func (hc *HashCounter) Add(k []byte) {
 }
 
 func (hc *HashCounter) Update(ks [][]byte) {
-	var hs []uint64
-	for i, k := range ks {
-		hs[i] = Hash(k)
-	}
-	hc.Lock()
-	for _, h := range hs {
+	var h uint64
+	for _, k := range ks {
+		h = Hash(k)
+		hc.Lock()
 		hc.m[h]++
+		hc.Unlock()
 	}
-	hc.Unlock()
 }
 
 func (hc *HashCounter) Get(k []byte) uint64 {
