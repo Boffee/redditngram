@@ -29,7 +29,7 @@ func ExtractRedditCommentsUptoNgramStreams(year, month, order int) ([]chan []str
 }
 
 func ExtractRedditCommentsUptoNgramSamples(year, month, order int) ([]chan [][]string, error) {
-	comments, err := LoadRedditComments(year, month)
+	comments, err := StreamRedditComments(year, month)
 	if err != nil {
 		return nil, err
 	}

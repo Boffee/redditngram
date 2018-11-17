@@ -19,7 +19,7 @@ type Comment struct {
 	LinkedId    string `json:"linked_id"`
 }
 
-func LoadRedditComments(year, month int) (<-chan *Comment, error) {
+func StreamRedditComments(year, month int) (<-chan *Comment, error) {
 	datapath, err := GetRedditCommentsLocalPath(year, month)
 	if err != nil {
 		return nil, err
@@ -50,6 +50,28 @@ func LoadRedditComments(year, month int) (<-chan *Comment, error) {
 	}()
 
 	return comments, nil
+}
+
+func StreamRedditNgrams(year, month, order int) (<-chan string, error) {
+	datapath, err := GetRedditNgramsLocalPath(year, month, order)
+	if err != nil {
+		return nil, err
+	}
+
+	ngramBytesStream, err := zipio.ReadFromFileAuto(datapath)
+	if err != nil {
+		return nil, err
+	}
+
+	ngramStrStream := make(chan string)
+	go func() {
+		defer close(ngramStrStream)
+		for ngramBytes := range ngramBytesStream {
+			ngramStrStream <- string(ngramBytes)
+		}
+	}()
+
+	return ngramStrStream, nil
 }
 
 func LoadRedditNgramCounts(year, month, order int) (counts map[string]uint64, err error) {
