@@ -16,9 +16,17 @@ func NewStringCounter() *StringCounter {
 	}
 }
 
-func (sc *StringCounter) Update(k string) {
+func (sc *StringCounter) Add(k string) {
 	sc.Lock()
 	sc.m[k]++
+	sc.Unlock()
+}
+
+func (sc *StringCounter) Update(ks []string) {
+	sc.Lock()
+	for _, k := range ks {
+		sc.m[k]++
+	}
 	sc.Unlock()
 }
 
@@ -47,6 +55,10 @@ func (sc *StringCounter) Subtract(k string, v uint64) {
 	sc.Unlock()
 }
 
+func (sc *StringCounter) GetMap() map[string]uint64 {
+	return sc.m
+}
+
 type HashCounter struct {
 	sync.RWMutex
 	m map[uint64]uint64
@@ -58,10 +70,22 @@ func NewHashCounter() *HashCounter {
 	}
 }
 
-func (hc *HashCounter) Update(k []byte) {
+func (hc *HashCounter) Add(k []byte) {
 	h := Hash(k)
 	hc.Lock()
 	hc.m[h]++
+	hc.Unlock()
+}
+
+func (hc *HashCounter) Update(ks [][]byte) {
+	var hs []uint64
+	for i, k := range ks {
+		hs[i] = Hash(k)
+	}
+	hc.Lock()
+	for _, h := range hs {
+		hc.m[h]++
+	}
 	hc.Unlock()
 }
 
@@ -98,4 +122,8 @@ func Hash(b []byte) uint64 {
 	h := fnv.New64a()
 	h.Write(b)
 	return h.Sum64()
+}
+
+func (hc *HashCounter) GetMap() map[uint64]uint64 {
+	return hc.m
 }
