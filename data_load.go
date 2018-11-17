@@ -52,26 +52,26 @@ func StreamRedditComments(year, month int) (<-chan *Comment, error) {
 	return comments, nil
 }
 
-func StreamRedditNgrams(year, month, order int) (<-chan string, error) {
+func StreamRedditNgramVocab(year, month, order int) (<-chan string, error) {
 	datapath, err := GetRedditNgramsLocalPath(year, month, order)
 	if err != nil {
 		return nil, err
 	}
 
-	ngramBytesStream, err := zipio.ReadFromFileAuto(datapath)
+	ngramBytes, err := zipio.ReadFromFileAuto(datapath)
 	if err != nil {
 		return nil, err
 	}
 
-	ngramStrStream := make(chan string)
+	ngramVocab := make(chan string)
 	go func() {
-		defer close(ngramStrStream)
-		for ngramBytes := range ngramBytesStream {
-			ngramStrStream <- string(ngramBytes)
+		defer close(ngramVocab)
+		for ngramBytes := range ngramBytes {
+			ngramVocab <- string(ngramBytes)
 		}
 	}()
 
-	return ngramStrStream, nil
+	return ngramVocab, nil
 }
 
 func LoadRedditNgramCounts(year, month, order int) (counts map[string]uint64, err error) {

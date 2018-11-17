@@ -23,11 +23,11 @@ func GenerateRedditCommentsUptoNgramCounts(year, month, order int) error {
 	var wg sync.WaitGroup
 	wg.Add(order)
 	for i, mgramCounts := range uptoNgramCounts {
-		go func(counts *StringCounter, order int) {
+		go func(ngramCounts *StringCounter, order int) {
 			defer wg.Done()
-			counts.RLock()
-			WriteRedditNgramCounts(counts.GetMap(), year, month, order)
-			counts.RUnlock()
+			ngramCounts.RLock()
+			WriteRedditNgramCounts(ngramCounts.GetMap(), year, month, order)
+			ngramCounts.RUnlock()
 		}(mgramCounts, i+1)
 	}
 
@@ -45,19 +45,19 @@ func GenerateRedditCommentsUptoNgramCountsHashed(year, month, order int) error {
 		return nil
 	}
 
-	uptoNgramHashCounts, uniqueUptoNgramStrStreams, err := CountRedditCommentsUptoNgramsHashed(year, month, order)
+	uptoNgramHashCounts, uptoNgramVocabs, err := CountRedditCommentsUptoNgramsHashed(year, month, order)
 	if err != nil {
 		return err
 	}
 
-	// Store n-gram strings on disk and count using hashed n-grams to save memory.
+	// Stream n-gram vocab to disk and count using hashed n-grams to save memory.
 	var wg sync.WaitGroup
 	wg.Add(order)
-	for i, uniqueMgramStrStream := range uniqueUptoNgramStrStreams {
+	for i, mgramVocab := range uptoNgramVocabs {
 		go func(ngramStrSender <-chan string, order int) {
 			WriteRedditNgrams(ngramStrSender, year, month, order)
 			wg.Done()
-		}(uniqueMgramStrStream, i+1)
+		}(mgramVocab, i+1)
 	}
 	wg.Wait()
 
@@ -65,15 +65,15 @@ func GenerateRedditCommentsUptoNgramCountsHashed(year, month, order int) error {
 	// and hashed n-gram counts from memory.
 	wg.Add(order)
 	for i, mgramHashCounts := range uptoNgramHashCounts {
-		uniqueMgramStrStream, err := StreamRedditNgrams(year, month, i+1)
+		mgramVocab, err := StreamRedditNgramVocab(year, month, i+1)
 		if err != nil {
 			return err
 		}
 
-		go func(counts *HashCounter, ngramStrStream <-chan string, order int) {
+		go func(ngramHCounts *HashCounter, ngramVocab <-chan string, order int) {
 			defer wg.Done()
-			WriteRedditNgramCountsHashed(counts, ngramStrStream, year, month, order)
-		}(mgramHashCounts, uniqueMgramStrStream, i+1)
+			WriteRedditNgramCountsHashed(ngramHCounts, ngramVocab, year, month, order)
+		}(mgramHashCounts, mgramVocab, i+1)
 	}
 	wg.Wait()
 	return nil
@@ -113,15 +113,15 @@ func CountRedditCommentsUptoNgrams(year, month, order int) ([]*StringCounter, er
 
 func CountRedditCommentsUptoNgramsHashed(year, month, order int) ([]*HashCounter, []chan string, error) {
 	uptoNgramHashCounts := make([]*HashCounter, order)
-	uniqueUptoNgramStrStreams := make([]chan string, order)
+	uptoNgramVocabs := make([]chan string, order)
 	for i := 0; i < order; i++ {
 		uptoNgramHashCounts[i] = NewHashCounter()
-		uniqueUptoNgramStrStreams[i] = make(chan string)
+		uptoNgramVocabs[i] = make(chan string)
 	}
 
 	go func() {
-		for _, uniqueMgramStrStreams := range uniqueUptoNgramStrStreams {
-			defer close(uniqueMgramStrStreams)
+		for _, mgramVocab := range uptoNgramVocabs {
+			defer close(mgramVocab)
 		}
 
 		var wg sync.WaitGroup
@@ -140,21 +140,21 @@ func CountRedditCommentsUptoNgramsHashed(year, month, order int) ([]*HashCounter
 				go func(
 					ngramStream chan []string,
 					ngramHashCounts *HashCounter,
-					uniqueNgramStrStreams chan string) {
+					ngramVocab chan string) {
 					defer wg.Done()
 					var ngramStr string
 					for ngram := range ngramStream {
 						ngramStr = Tokens2String(ngram)
 						ngramHashCounts.Add([]byte(ngramStr))
-						uniqueNgramStrStreams <- ngramStr
+						ngramVocab <- ngramStr
 					}
-				}(uptoNgramStreams[i], uptoNgramHashCounts[i], uniqueUptoNgramStrStreams[i])
+				}(uptoNgramStreams[i], uptoNgramHashCounts[i], uptoNgramVocabs[i])
 			}
 		}
 		wg.Wait()
 	}()
 
-	return uptoNgramHashCounts, uniqueUptoNgramStrStreams, nil
+	return uptoNgramHashCounts, uptoNgramVocabs, nil
 }
 
 // If month is 0, get all months
