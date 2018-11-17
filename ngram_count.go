@@ -45,7 +45,7 @@ func CountRedditCommentsUptoNgrams(year, month, order int) ([]*StringCounter, er
 	for _, month := range getQueryMonths(month) {
 		uptoNgramStreams, err := ExtractRedditCommentsUptoNgramStreams(year, month, order)
 		if err != nil {
-			if IsDateOutOfRangeError(err) {
+			if isDateOutOfRangeError(err) {
 				continue
 			} else {
 				log.Fatalln(err)
@@ -121,7 +121,7 @@ func CountRedditCommentsUptoNgramsHashed(year, month, order int) ([]*HashCounter
 		for _, month := range getQueryMonths(month) {
 			uptoNgramStreams, err := ExtractRedditCommentsUptoNgramStreams(year, month, order)
 			if err != nil {
-				if IsDateOutOfRangeError(err) {
+				if isDateOutOfRangeError(err) {
 					continue
 				} else {
 					log.Fatalln(err)

@@ -35,7 +35,7 @@ func createDateOutOfRangeError(year, month int) error {
 	return fmt.Errorf("date out of range: %04d-%02d", year, month)
 }
 
-func IsDateOutOfRangeError(err error) bool {
+func isDateOutOfRangeError(err error) bool {
 	if err == nil {
 		return false
 	}
