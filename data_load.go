@@ -5,6 +5,8 @@ import (
 	"log"
 	"strconv"
 	"strings"
+
+	"github.com/boffee/zipio"
 )
 
 type Comment struct {
@@ -23,7 +25,7 @@ func LoadRedditComments(year, month int) (<-chan *Comment, error) {
 		return nil, err
 	}
 
-	sender, err := ReadFromFileAuto(datapath)
+	sender, err := zipio.ReadFromFileAuto(datapath)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +62,7 @@ func LoadRedditNgramCounts(year, month, order int) (counts map[string]uint64, er
 }
 
 func LoadCountsFromTsv(path string) (counts map[string]uint64, err error) {
-	sender, err := ReadFromFileAuto(path)
+	sender, err := zipio.ReadFromFileAuto(path)
 	if err != nil {
 		return nil, err
 	}

@@ -3,6 +3,8 @@ package redditngram
 import (
 	"fmt"
 	"log"
+
+	"github.com/boffee/zipio"
 )
 
 func WriteRedditNgramCounts(counts map[string]uint64, year, month, order int) {
@@ -21,7 +23,7 @@ func WriteRedditNgramCounts(counts map[string]uint64, year, month, order int) {
 		}
 	}()
 
-	err = WriteToFileAuto(sender, datapath)
+	err = zipio.WriteToFileAuto(sender, datapath)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -41,7 +43,7 @@ func WriteRedditNgrams(ngrams <-chan string, year, month, order int) {
 		}
 	}()
 
-	err = WriteToFileAuto(sender, datapath)
+	err = zipio.WriteToFileAuto(sender, datapath)
 	if err != nil {
 		log.Fatalln(err)
 	}
