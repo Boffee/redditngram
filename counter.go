@@ -7,12 +7,12 @@ import (
 
 type StringCounter struct {
 	sync.RWMutex
-	m map[string]uint64
+	m map[string]uint32
 }
 
 func NewStringCounter() *StringCounter {
 	return &StringCounter{
-		m: make(map[string]uint64),
+		m: make(map[string]uint32),
 	}
 }
 
@@ -30,14 +30,14 @@ func (sc *StringCounter) Update(ks []string) {
 	}
 }
 
-func (sc *StringCounter) Get(k string) uint64 {
+func (sc *StringCounter) Get(k string) uint32 {
 	sc.RLock()
 	v := sc.m[k]
 	sc.RUnlock()
 	return v
 }
 
-func (sc *StringCounter) Set(k string, v uint64) {
+func (sc *StringCounter) Set(k string, v uint32) {
 	sc.Lock()
 	sc.m[k] = v
 	sc.Unlock()
@@ -49,24 +49,24 @@ func (sc *StringCounter) Delete(k string) {
 	sc.Unlock()
 }
 
-func (sc *StringCounter) Subtract(k string, v uint64) {
+func (sc *StringCounter) Subtract(k string, v uint32) {
 	sc.Lock()
 	sc.m[k] -= v
 	sc.Unlock()
 }
 
-func (sc *StringCounter) GetMap() map[string]uint64 {
+func (sc *StringCounter) GetMap() map[string]uint32 {
 	return sc.m
 }
 
 type HashCounter struct {
 	sync.RWMutex
-	m map[uint64]uint64
+	m map[uint32]uint32
 }
 
 func NewHashCounter() *HashCounter {
 	return &HashCounter{
-		m: make(map[uint64]uint64),
+		m: make(map[uint32]uint32),
 	}
 }
 
@@ -78,7 +78,7 @@ func (hc *HashCounter) Add(k []byte) {
 }
 
 func (hc *HashCounter) Update(ks [][]byte) {
-	var h uint64
+	var h uint32
 	for _, k := range ks {
 		h = Hash(k)
 		hc.Lock()
@@ -87,7 +87,7 @@ func (hc *HashCounter) Update(ks [][]byte) {
 	}
 }
 
-func (hc *HashCounter) Get(k []byte) uint64 {
+func (hc *HashCounter) Get(k []byte) uint32 {
 	h := Hash(k)
 	hc.RLock()
 	v := hc.m[h]
@@ -95,7 +95,7 @@ func (hc *HashCounter) Get(k []byte) uint64 {
 	return v
 }
 
-func (hc *HashCounter) Set(k []byte, v uint64) {
+func (hc *HashCounter) Set(k []byte, v uint32) {
 	h := Hash(k)
 	hc.Lock()
 	hc.m[h] = v
@@ -109,19 +109,19 @@ func (hc *HashCounter) Delete(k []byte) {
 	hc.Unlock()
 }
 
-func (hc *HashCounter) Subtract(k []byte, v uint64) {
+func (hc *HashCounter) Subtract(k []byte, v uint32) {
 	h := Hash(k)
 	hc.Lock()
 	hc.m[h] -= v
 	hc.Unlock()
 }
 
-func Hash(b []byte) uint64 {
-	h := fnv.New64a()
+func Hash(b []byte) uint32 {
+	h := fnv.New32a()
 	h.Write(b)
-	return h.Sum64()
+	return h.Sum32()
 }
 
-func (hc *HashCounter) GetMap() map[uint64]uint64 {
+func (hc *HashCounter) GetMap() map[uint32]uint32 {
 	return hc.m
 }

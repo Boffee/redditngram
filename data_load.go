@@ -74,7 +74,7 @@ func StreamRedditNgramVocab(year, month, order int) (<-chan string, error) {
 	return ngramVocab, nil
 }
 
-func LoadRedditNgramCounts(year, month, order int) (counts map[string]uint64, err error) {
+func LoadRedditNgramCounts(year, month, order int) (counts map[string]uint32, err error) {
 	datapath, err := GetRedditNgramCountsLocalPath(year, month, order)
 	if err != nil {
 		return nil, err
@@ -83,20 +83,22 @@ func LoadRedditNgramCounts(year, month, order int) (counts map[string]uint64, er
 	return counts, err
 }
 
-func LoadCountsFromTsv(path string) (counts map[string]uint64, err error) {
+func LoadCountsFromTsv(path string) (counts map[string]uint32, err error) {
 	sender, err := zipio.ReadFromFileAuto(path)
 	if err != nil {
 		return nil, err
 	}
 
 	fields := make([]string, 2)
-	counts = make(map[string]uint64)
+	counts = make(map[string]uint32)
+	var count uint64
 	for bytes := range sender {
 		fields = strings.Split(string(bytes), "\t")
-		counts[fields[0]], err = strconv.ParseUint(fields[1], 10, 64)
+		count, err = strconv.ParseUint(fields[1], 10, 32)
 		if err != nil {
 			return nil, err
 		}
+		counts[fields[0]] = uint32(count)
 	}
 
 	return counts, nil

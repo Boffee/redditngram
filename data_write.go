@@ -10,8 +10,8 @@ import (
 
 const newLineByte = byte('\n')
 
-func WriteRedditNgramCounts(ngramCounts map[string]uint64, year, month, order int) error {
-	datapath, err := GetRedditNgramCountsLocalPath(year, month, order)
+func WriteRedditNgramCounts(ngramCounts map[string]uint32, year, month, order int) error {
+	ngramCountsPath, err := GetRedditNgramCountsLocalPath(year, month, order)
 	if err != nil {
 		return err
 	}
@@ -26,7 +26,7 @@ func WriteRedditNgramCounts(ngramCounts map[string]uint64, year, month, order in
 		}
 	}()
 
-	err = zipio.WriteToFileAuto(sender, datapath)
+	err = zipio.WriteToFileAuto(sender, ngramCountsPath)
 	if err != nil {
 		return err
 	}
@@ -35,6 +35,11 @@ func WriteRedditNgramCounts(ngramCounts map[string]uint64, year, month, order in
 }
 
 func WriteRedditNgramCountsHashed(ngramHCounts *HashCounter, ngramVocab <-chan string, year, month, order int) error {
+	ngramCountsPath, err := GetRedditNgramCountsLocalPath(year, month, order)
+	if err != nil {
+		return err
+	}
+
 	ngramCachePath, err := GetRedditNgramsLocalPath(year, month, order)
 	if err != nil {
 		return err
@@ -59,7 +64,7 @@ func WriteRedditNgramCountsHashed(ngramHCounts *HashCounter, ngramVocab <-chan s
 	sender := make(chan []byte)
 	go func() {
 		defer close(sender)
-		var v uint64
+		var v uint32
 		var k string
 		var line string
 		for k = range ngramVocab {
@@ -71,7 +76,7 @@ func WriteRedditNgramCountsHashed(ngramHCounts *HashCounter, ngramVocab <-chan s
 		}
 	}()
 
-	err = zipio.WriteToFileAuto(sender, datapath)
+	err = zipio.WriteToFileAuto(sender, ngramCountsPath)
 	if err != nil {
 		return err
 	}
