@@ -10,7 +10,7 @@ import (
 const dateFormat = "2006-01"
 const bz2Format = "RC_%04d-%02d.bz2"
 const xzFormat = "RC_%04d-%02d.xz"
-const ngramFormat = "RC_%04d-%02d_%dg.lz4"
+const ngramFormat = "RC_%04d-%02d_%dg.gz"
 const ngramCountFormat = "RC_%04d-%02d_%dgc.gz"
 
 var RedditDataPath = getRedditDataPath()
@@ -58,7 +58,8 @@ func getRedditCommentsFilename(month, year int) (filename string) {
 }
 
 func getRedditDataPath() string {
-	RedditDataPath := "~/reddit"
+
+	RedditDataPath := os.ExpandEnv("$HOME/reddit")
 	if datapath := os.Getenv("REDDIT_DATA"); datapath != "" {
 		RedditDataPath = datapath
 	}
