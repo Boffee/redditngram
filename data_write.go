@@ -35,7 +35,7 @@ func WriteRedditNgramCounts(ngramCounts map[string]uint64, year, month, order in
 }
 
 func WriteRedditNgramCountsHashed(ngramHCounts *HashCounter, ngramVocab <-chan string, year, month, order int) error {
-	datapath, err := GetRedditNgramCountsLocalPath(year, month, order)
+	ngramCachePath, err := GetRedditNgramsLocalPath(year, month, order)
 	if err != nil {
 		return err
 	}
@@ -47,7 +47,7 @@ func WriteRedditNgramCountsHashed(ngramHCounts *HashCounter, ngramVocab <-chan s
 	}
 	// Delete n-gram vocab after n-gram vocab count write is finished.
 	defer func() {
-		err = os.Remove(datapath)
+		err = os.Remove(ngramCachePath)
 		if err != nil {
 			log.Panic(err)
 		}
