@@ -26,7 +26,10 @@ func GenerateRedditCommentsUptoNgramCounts(year, month, order int) error {
 		go func(ngramCounts *StringCounter, order int) {
 			defer wg.Done()
 			ngramCounts.RLock()
-			WriteRedditNgramCounts(ngramCounts.GetMap(), year, month, order)
+			err := WriteRedditNgramCounts(ngramCounts.GetMap(), year, month, order)
+			if err != nil {
+				log.Panic(err)
+			}
 			ngramCounts.RUnlock()
 		}(mgramCounts, i+1)
 	}
@@ -50,32 +53,19 @@ func GenerateRedditCommentsUptoNgramCountsHashed(year, month, order int) error {
 		return err
 	}
 
-	// Stream n-gram vocab to disk and count using hashed n-grams to save memory.
 	var wg sync.WaitGroup
 	wg.Add(order)
-	for i, mgramVocab := range uptoNgramVocabs {
-		go func(ngramStrSender <-chan string, order int) {
-			WriteRedditNgrams(ngramStrSender, year, month, order)
-			wg.Done()
-		}(mgramVocab, i+1)
-	}
-	wg.Wait()
-
-	// Create n-gram string count file by merging n-gram strings read from disk
-	// and hashed n-gram counts from memory.
-	wg.Add(order)
-	for i, mgramHashCounts := range uptoNgramHashCounts {
-		mgramVocab, err := StreamRedditNgramVocab(year, month, i+1)
-		if err != nil {
-			return err
-		}
-
+	for i := 0; i < order; i++ {
 		go func(ngramHCounts *HashCounter, ngramVocab <-chan string, order int) {
 			defer wg.Done()
-			WriteRedditNgramCountsHashed(ngramHCounts, ngramVocab, year, month, order)
-		}(mgramHashCounts, mgramVocab, i+1)
+			err := WriteRedditNgramCountsHashed(ngramHCounts, ngramVocab, year, month, order)
+			if err != nil {
+				log.Panic(err)
+			}
+		}(uptoNgramHashCounts[i], uptoNgramVocabs[i], i+1)
 	}
 	wg.Wait()
+
 	return nil
 }
 

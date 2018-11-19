@@ -3,23 +3,24 @@ package redditngram
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/boffee/zipio"
 )
 
 const newLineByte = byte('\n')
 
-func WriteRedditNgramCounts(counts map[string]uint64, year, month, order int) {
+func WriteRedditNgramCounts(ngramCounts map[string]uint64, year, month, order int) error {
 	datapath, err := GetRedditNgramCountsLocalPath(year, month, order)
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
 
 	sender := make(chan []byte)
 	go func() {
 		defer close(sender)
 		var line string
-		for k, v := range counts {
+		for k, v := range ngramCounts {
 			line = fmt.Sprintf("%s\t%d\n", k, v)
 			sender <- []byte(line)
 		}
@@ -27,16 +28,34 @@ func WriteRedditNgramCounts(counts map[string]uint64, year, month, order int) {
 
 	err = zipio.WriteToFileAuto(sender, datapath)
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
+
+	return nil
 }
 
-func WriteRedditNgramCountsHashed(counts *HashCounter, ngramVocab <-chan string, year, month, order int) {
+func WriteRedditNgramCountsHashed(ngramHCounts *HashCounter, ngramVocab <-chan string, year, month, order int) error {
 	datapath, err := GetRedditNgramCountsLocalPath(year, month, order)
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
 
+	// Stream n-gram vocab to disk and count using hashed n-grams to save memory.
+	err = WriteRedditNgrams(ngramVocab, year, month, order)
+	if err != nil {
+		return err
+	}
+	// Delete n-gram vocab after n-gram vocab count write is finished.
+	defer func() {
+		err = os.Remove(datapath)
+		if err != nil {
+			log.Panic(err)
+		}
+	}()
+
+	// Create n-gram vocab count file by merging n-gram vocab read from disk
+	// and hashed n-gram counts from memory.
+	ngramVocab, err = StreamRedditNgramVocab(year, month, order)
 	sender := make(chan []byte)
 	go func() {
 		defer close(sender)
@@ -44,9 +63,9 @@ func WriteRedditNgramCountsHashed(counts *HashCounter, ngramVocab <-chan string,
 		var k string
 		var line string
 		for k = range ngramVocab {
-			counts.RLock()
-			v = counts.Get([]byte(k))
-			counts.RUnlock()
+			ngramHCounts.RLock()
+			v = ngramHCounts.Get([]byte(k))
+			ngramHCounts.RUnlock()
 			line = fmt.Sprintf("%s\t%d\n", k, v)
 			sender <- []byte(line)
 		}
@@ -54,14 +73,16 @@ func WriteRedditNgramCountsHashed(counts *HashCounter, ngramVocab <-chan string,
 
 	err = zipio.WriteToFileAuto(sender, datapath)
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
+
+	return nil
 }
 
-func WriteRedditNgrams(ngrams <-chan string, year, month, order int) {
+func WriteRedditNgrams(ngrams <-chan string, year, month, order int) error {
 	datapath, err := GetRedditNgramsLocalPath(year, month, order)
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
 
 	sender := make(chan []byte)
@@ -74,6 +95,8 @@ func WriteRedditNgrams(ngrams <-chan string, year, month, order int) {
 
 	err = zipio.WriteToFileAuto(sender, datapath)
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
+
+	return nil
 }
