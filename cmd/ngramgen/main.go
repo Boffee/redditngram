@@ -8,11 +8,10 @@ import (
 	"github.com/boffee/redditngram"
 )
 
-const maxWorkers = 1
+const maxWorkers = 4
 const maxOrder = 5
 
 func main() {
-
 	dataStartDate := redditngram.DataStartDate
 	dataEndDate := time.Now().AddDate(0, -1, 0)
 	dataCurrDate := dataStartDate
@@ -31,7 +30,7 @@ func main() {
 		<-workerQ
 		wg.Add(1)
 		go func(year, month, maxOrder int) {
-			err := redditngram.GenerateRedditCommentsUptoNgramCounts(year, month, maxOrder)
+			err := redditngram.GenerateRedditCommentsUptoNgramCountsHashed(year, month, maxOrder)
 			if err != nil {
 				log.Println(err)
 			}
