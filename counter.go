@@ -55,6 +55,13 @@ func (sc *StringCounter) Subtract(k string, v uint32) {
 	sc.Unlock()
 }
 
+func (sc *StringCounter) HasKey(k string) bool {
+	sc.Lock()
+	_, okay := sc.m[k]
+	sc.Unlock()
+	return okay
+}
+
 func (sc *StringCounter) GetMap() map[string]uint32 {
 	return sc.m
 }
@@ -116,12 +123,20 @@ func (hc *HashCounter) Subtract(k []byte, v uint32) {
 	hc.Unlock()
 }
 
-func Hash(b []byte) uint32 {
-	h := fnv.New32a()
-	h.Write(b)
-	return h.Sum32()
+func (hc *HashCounter) HasKey(k []byte) bool {
+	h := Hash(k)
+	hc.Lock()
+	_, okay := hc.m[h]
+	hc.Unlock()
+	return okay
 }
 
 func (hc *HashCounter) GetMap() map[uint32]uint32 {
 	return hc.m
+}
+
+func Hash(b []byte) uint32 {
+	h := fnv.New32a()
+	h.Write(b)
+	return h.Sum32()
 }
