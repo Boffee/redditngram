@@ -133,10 +133,16 @@ func CountRedditCommentsUptoNgramsHashed(year, month, order int) ([]*HashCounter
 					ngramVocab chan string) {
 					defer wg.Done()
 					var ngramStr string
+					var ngramBytes []byte
+					var hasKey bool
 					for ngram := range ngramStream {
 						ngramStr = Tokens2String(ngram)
-						ngramHashCounts.Add([]byte(ngramStr))
-						ngramVocab <- ngramStr
+						ngramBytes = []byte(ngramStr)
+						hasKey = ngramHashCounts.HasKey(ngramBytes)
+						ngramHashCounts.Add(ngramBytes)
+						if !hasKey {
+							ngramVocab <- ngramStr
+						}
 					}
 				}(uptoNgramStreams[i], uptoNgramHashCounts[i], uptoNgramVocabs[i])
 			}
